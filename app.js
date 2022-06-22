@@ -43,5 +43,27 @@ app.get("/participants", (req, res) => {
     promise.then(participants => res.send(participants));
 });
 
+app.post("/messages", (req, res) => {
+
+    //fazer as validações aqui e se tiver tudo ok:
+
+    const { to, text, type } = req.body;
+    const from = req.headers.user;
+    
+    const message = {
+        from, 
+        to, 
+        text, 
+        type, 
+        time: dayjs().format("HH:mm:ss")
+    };
+
+    db.collection('messages').insertOne(message);
+
+    res.sendStatus(201);
+});
+
+
+
 
 app.listen(5000);
