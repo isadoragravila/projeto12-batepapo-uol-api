@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { Db, MongoClient } from 'mongodb';
+import dayjs from 'dayjs';
+import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 const app = express();
@@ -16,6 +18,25 @@ mongoClient.connect().then(()=> {
     db = mongoClient.db("batepapouol_api");
 });
 
+app.post("/participants", (req, res) => {
+
+    //fazer as validações aqui e se tiver tudo ok:
+
+    const { name } = req.body;
+    const participant = { name, lastStatus: Date.now()};
+    const message = {
+        from: name, 
+        to: 'Todos', 
+        text: 'entra na sala...', 
+        type: 'status', 
+        time: dayjs().format("HH:mm:ss")
+    };
+
+    db.collection('participants').insertOne(participant);
+    db.collection('messages').insertOne(message);
+
+    res.sendStatus(201);
+});
 
 
 
