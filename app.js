@@ -38,7 +38,10 @@ app.post("/participants", (req, res) => {
     res.sendStatus(201);
 });
 
-
+app.get("/participants", (req, res) => {
+    const promise = db.collection('participants').find().toArray();
+    promise.then(participants => res.send(participants));
+});
 
 
 app.listen(5000);
