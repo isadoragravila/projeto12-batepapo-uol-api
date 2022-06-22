@@ -63,7 +63,30 @@ app.post("/messages", (req, res) => {
     res.sendStatus(201);
 });
 
+app.get("/messages", (req, res) => {
+    const { limit } = req.query;
+    const { user } = req.headers;
+    const promise = db.collection('messages').find().toArray();
 
+    promise.then(messages => {
+        messages.reverse();
+        const userMessages = messages.filter(item => {
+            if (item.from === user ||item.type === 'message' || item.type === 'status') {
+                return true;
+            } else if (item.type === 'private_message' && (item.to === user || item.to === "Todos")) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        if (!limit || userMessages.length < limit) {
+            res.send(userMessages);
+        } else {
+            res.send(userMessages.slice(0 , limit));
+        }
+    });
+});
 
 
 app.listen(5000);
