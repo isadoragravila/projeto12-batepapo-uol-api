@@ -88,5 +88,20 @@ app.get("/messages", (req, res) => {
     });
 });
 
+app.post("/status", (req, res) => {
+
+    const { user } = req.headers;
+
+    const promise = db.collection('participants').find({name: user}).toArray();
+    promise.then(participant => {
+        if (participant.length === 0) {
+            res.sendStatus(404);
+            return;
+        }
+        //modificar o lastStatus
+        res.sendStatus(200);
+    });
+});
+
 
 app.listen(5000);
