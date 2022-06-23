@@ -103,5 +103,25 @@ app.post("/status", (req, res) => {
     });
 });
 
+async function removeParticipant () {
+    const now = Date.now();
+    const participants = await db.collection('participants').find().toArray();
+    const oldParticipants = participants.filter(item => item.lastStatus < (now - 10)).map(item => ({name: item.name}));
+
+    for (let i = 0; i < oldParticipants.length; i++) {
+        const deletado = await db.collection('participants').deleteOne(oldParticipants[i]);
+        const message = {
+            from: oldParticipants[i].name, 
+            to: 'Todos', 
+            text: 'sai da sala...', 
+            type: 'status', 
+            time: dayjs().format("HH:mm:ss")
+        };
+        db.collection('messages').insertOne(message);
+    }
+}
+
+// setInterval(removeParticipant, 15000);
+
 
 app.listen(5000);
