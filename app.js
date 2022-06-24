@@ -15,7 +15,7 @@ app.use(express.json());
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
 
-mongoClient.connect().then(()=> {
+mongoClient.connect().then(() => {
     db = mongoClient.db("batepapouol_api");
 });
 
@@ -30,7 +30,6 @@ const messageSchema = joi.object({
 });
 
 app.post("/participants", async (req, res) => {
-
     const validation = participantSchema.validate(req.body);
     if (validation.error) {
         return res.sendStatus(422);
@@ -43,12 +42,12 @@ app.post("/participants", async (req, res) => {
         return res.sendStatus(409);
     }
 
-    const participant = { name, lastStatus: Date.now()};
+    const participant = { name, lastStatus: Date.now() };
     const message = {
-        from: name, 
-        to: 'Todos', 
-        text: 'entra na sala...', 
-        type: 'status', 
+        from: name,
+        to: 'Todos',
+        text: 'entra na sala...',
+        type: 'status',
         time: dayjs().format("HH:mm:ss")
     };
 
@@ -63,7 +62,6 @@ app.get("/participants", async (req, res) => {
         const participants = await db.collection('participants').find().toArray();
         res.send(participants);
     } catch (error) {
-        console.log(error);
         res.status(500).send(error);
     }
 });
@@ -83,10 +81,10 @@ app.post("/messages", async (req, res) => {
 
     const { to, text, type } = req.body;
     const message = {
-        from: user, 
-        to, 
-        text, 
-        type, 
+        from: user,
+        to,
+        text,
+        type,
         time: dayjs().format("HH:mm:ss")
     };
 
@@ -103,7 +101,7 @@ app.get("/messages", (req, res) => {
     promise.then(messages => {
         messages.reverse();
         const userMessages = messages.filter(item => {
-            if (item.from === user ||item.type === 'message' || item.type === 'status') {
+            if (item.from === user || item.type === 'message' || item.type === 'status') {
                 return true;
             } else if (item.type === 'private_message' && (item.to === user || item.to === "Todos")) {
                 return true;
@@ -115,38 +113,38 @@ app.get("/messages", (req, res) => {
         if (!limit || userMessages.length < limit) {
             res.send(userMessages);
         } else {
-            res.send(userMessages.slice(0 , limit));
+            res.send(userMessages.slice(0, limit));
         }
     });
 });
 
 app.post("/status", async (req, res) => {
     const { user } = req.headers;
-    const participant = await db.collection('participants').findOne({name: user});
+    const participant = await db.collection('participants').findOne({ name: user });
     if (!participant) {
         return res.sendStatus(404);
     }
 
     await db.collection('participants').updateOne(
-        {name: user},
-        {$set: {lastStatus: Date.now()}}
-        );
+        { name: user },
+        { $set: { lastStatus: Date.now() } }
+    );
 
     res.sendStatus(200);
 });
 
-async function removeParticipant () {
+async function removeParticipant() {
     const now = Date.now();
     const participants = await db.collection('participants').find().toArray();
-    const oldParticipants = participants.filter(item => item.lastStatus < (now - 10)).map(item => ({name: item.name}));
+    const oldParticipants = participants.filter(item => item.lastStatus < (now - 10)).map(item => ({ name: item.name }));
 
     for (let i = 0; i < oldParticipants.length; i++) {
-        const deletado = await db.collection('participants').deleteOne(oldParticipants[i]);
+        await db.collection('participants').deleteOne(oldParticipants[i]);
         const message = {
-            from: oldParticipants[i].name, 
-            to: 'Todos', 
-            text: 'sai da sala...', 
-            type: 'status', 
+            from: oldParticipants[i].name,
+            to: 'Todos',
+            text: 'sai da sala...',
+            type: 'status',
             time: dayjs().format("HH:mm:ss")
         };
         db.collection('messages').insertOne(message);
