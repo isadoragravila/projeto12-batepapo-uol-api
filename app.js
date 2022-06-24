@@ -93,29 +93,26 @@ app.post("/messages", async (req, res) => {
     res.sendStatus(201);
 });
 
-app.get("/messages", (req, res) => {
+app.get("/messages", async (req, res) => {
     const { limit } = req.query;
     const { user } = req.headers;
-    const promise = db.collection('messages').find().toArray();
-
-    promise.then(messages => {
-        messages.reverse();
-        const userMessages = messages.filter(item => {
-            if (item.from === user || item.type === 'message' || item.type === 'status') {
-                return true;
-            } else if (item.type === 'private_message' && (item.to === user || item.to === "Todos")) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-
-        if (!limit || userMessages.length < limit) {
-            res.send(userMessages);
+    const messages = await db.collection('messages').find().toArray();
+    
+    const userMessages = messages.filter(item => {
+        if (item.from === user || item.type === 'message' || item.type === 'status') {
+            return true;
+        } else if (item.type === 'private_message' && (item.to === user || item.to === "Todos")) {
+            return true;
         } else {
-            res.send(userMessages.slice(0, limit));
+            return false;
         }
     });
+
+    if (!limit || userMessages.length < limit) {
+        res.send(userMessages);
+    } else {
+        res.send(userMessages.slice(userMessages.length - limit, userMessages.length));
+    }
 });
 
 app.post("/status", async (req, res) => {
@@ -134,9 +131,10 @@ app.post("/status", async (req, res) => {
 });
 
 async function removeParticipant() {
-    const now = Date.now();
     const participants = await db.collection('participants').find().toArray();
-    const oldParticipants = participants.filter(item => item.lastStatus < (now - 10)).map(item => ({ name: item.name }));
+    const oldParticipants = participants
+    .filter(item => item.lastStatus < (Date.now() - 10000))
+    .map(item => ({ name: item.name }));
 
     for (let i = 0; i < oldParticipants.length; i++) {
         await db.collection('participants').deleteOne(oldParticipants[i]);
@@ -151,7 +149,6 @@ async function removeParticipant() {
     }
 }
 
-// setInterval(removeParticipant, 15000);
-
+setInterval(removeParticipant, 15000);
 
 app.listen(5000);
