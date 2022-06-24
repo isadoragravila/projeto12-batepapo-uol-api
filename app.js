@@ -3,6 +3,7 @@ import cors from 'cors';
 import dayjs from 'dayjs';
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import joi from 'joi';
 
 dotenv.config();
 
@@ -18,11 +19,24 @@ mongoClient.connect().then(()=> {
     db = mongoClient.db("batepapouol_api");
 });
 
-app.post("/participants", (req, res) => {
+const participantSchema = joi.object({
+    name: joi.string().required()
+});
 
-    //fazer as validações aqui e se tiver tudo ok:
+app.post("/participants", async (req, res) => {
+
+    const validation = participantSchema.validate(req.body);
+    if (validation.error) {
+        return res.sendStatus(422);
+    }
 
     const { name } = req.body;
+    const participants = await db.collection('participants').find().toArray();
+    const repeated = participants.find(item => item.name === name);
+    if (repeated) {
+        return res.sendStatus(409);
+    }
+
     const participant = { name, lastStatus: Date.now()};
     const message = {
         from: name, 
