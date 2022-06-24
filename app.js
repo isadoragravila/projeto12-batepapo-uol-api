@@ -69,22 +69,21 @@ app.get("/participants", async (req, res) => {
 });
 
 app.post("/messages", async (req, res) => {
-
     const validation = messageSchema.validate(req.body);
     if (validation.error) {
         return res.sendStatus(422);
     }
 
-    const from = req.headers.user;
+    const { user } = req.headers;
     const participants = await db.collection('participants').find().toArray();
-    const repeated = participants.find(item => item.name === from);
+    const repeated = participants.find(item => item.name === user);
     if (!repeated) {
         return res.sendStatus(409);
     }
 
     const { to, text, type } = req.body;
     const message = {
-        from, 
+        from: user, 
         to, 
         text, 
         type, 
@@ -121,19 +120,19 @@ app.get("/messages", (req, res) => {
     });
 });
 
-app.post("/status", (req, res) => {
-
+app.post("/status", async (req, res) => {
     const { user } = req.headers;
+    const participant = await db.collection('participants').findOne({name: user});
+    if (!participant) {
+        return res.sendStatus(404);
+    }
 
-    const promise = db.collection('participants').find({name: user}).toArray();
-    promise.then(participant => {
-        if (participant.length === 0) {
-            res.sendStatus(404);
-            return;
-        }
-        //modificar o lastStatus
-        res.sendStatus(200);
-    });
+    await db.collection('participants').updateOne(
+        {name: user},
+        {$set: {lastStatus: Date.now()}}
+        );
+
+    res.sendStatus(200);
 });
 
 async function removeParticipant () {
