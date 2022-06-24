@@ -23,6 +23,12 @@ const participantSchema = joi.object({
     name: joi.string().required()
 });
 
+const messageSchema = joi.object({
+    to: joi.string().required(),
+    text: joi.string().required(),
+    type: joi.string().valid("message", "private_message").required()
+});
+
 app.post("/participants", async (req, res) => {
 
     const validation = participantSchema.validate(req.body);
@@ -62,13 +68,21 @@ app.get("/participants", async (req, res) => {
     }
 });
 
-app.post("/messages", (req, res) => {
+app.post("/messages", async (req, res) => {
 
-    //fazer as validações aqui e se tiver tudo ok:
+    const validation = messageSchema.validate(req.body);
+    if (validation.error) {
+        return res.sendStatus(422);
+    }
+
+    const from = req.headers.user;
+    const participants = await db.collection('participants').find().toArray();
+    const repeated = participants.find(item => item.name === from);
+    if (!repeated) {
+        return res.sendStatus(409);
+    }
 
     const { to, text, type } = req.body;
-    const from = req.headers.user;
-    
     const message = {
         from, 
         to, 
