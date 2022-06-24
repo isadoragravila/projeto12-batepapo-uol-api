@@ -52,9 +52,14 @@ app.post("/participants", async (req, res) => {
     res.sendStatus(201);
 });
 
-app.get("/participants", (req, res) => {
-    const promise = db.collection('participants').find().toArray();
-    promise.then(participants => res.send(participants));
+app.get("/participants", async (req, res) => {
+    try {
+        const participants = await db.collection('participants').find().toArray();
+        res.send(participants);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
 });
 
 app.post("/messages", (req, res) => {
