@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import joi from 'joi';
+import { stripHtml } from "string-strip-html";
 
 dotenv.config();
 
@@ -35,7 +36,7 @@ app.post("/participants", async (req, res) => {
         return res.sendStatus(422);
     }
 
-    const { name } = req.body;
+    const name = stripHtml(req.body.name).result.trim();
     const participants = await db.collection('participants').find().toArray();
     const repeated = participants.find(item => item.name === name);
     if (repeated) {
@@ -72,14 +73,16 @@ app.post("/messages", async (req, res) => {
         return res.sendStatus(422);
     }
 
-    const { user } = req.headers;
+    const user = stripHtml(req.headers.user).result.trim();
     const participants = await db.collection('participants').find().toArray();
     const repeated = participants.find(item => item.name === user);
     if (!repeated) {
         return res.sendStatus(409);
     }
 
-    const { to, text, type } = req.body;
+    const to = stripHtml(req.body.to).result.trim();
+    const text = stripHtml(req.body.text).result.trim();
+    const type = stripHtml(req.body.type).result.trim();
     const message = {
         from: user,
         to,
