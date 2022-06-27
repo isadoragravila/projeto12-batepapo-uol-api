@@ -100,7 +100,7 @@ app.get("/messages", async (req, res) => {
     const { limit } = req.query;
     const { user } = req.headers;
     const messages = await db.collection('messages').find().toArray();
-    
+
     const userMessages = messages.filter(item => {
         if (item.from === user || item.type === 'message' || item.type === 'status') {
             return true;
@@ -136,8 +136,8 @@ app.post("/status", async (req, res) => {
 async function removeParticipant() {
     const participants = await db.collection('participants').find().toArray();
     const oldParticipants = participants
-    .filter(item => item.lastStatus < (Date.now() - 10000))
-    .map(item => ({ name: item.name }));
+        .filter(item => item.lastStatus < (Date.now() - 10000))
+        .map(item => ({ name: item.name }));
 
     for (let i = 0; i < oldParticipants.length; i++) {
         await db.collection('participants').deleteOne(oldParticipants[i]);
@@ -189,7 +189,7 @@ app.put("/messages/:id", async (req, res) => {
         return res.sendStatus(422);
     }
 
-    const messageId = await db.collection('messages').findOne({ _id: new ObjectId(id)});
+    const messageId = await db.collection('messages').findOne({ _id: new ObjectId(id) });
     if (!messageId) {
         return res.sendStatus(404);
     }
@@ -201,7 +201,7 @@ app.put("/messages/:id", async (req, res) => {
         { _id: new ObjectId(id) },
         { $set: { to, text, type } }
     );
-        
+
     res.sendStatus(200);
 });
 
