@@ -77,7 +77,7 @@ app.post("/messages", async (req, res) => {
     const participants = await db.collection('participants').find().toArray();
     const repeated = participants.find(item => item.name === user);
     if (!repeated) {
-        return res.sendStatus(409);
+        return res.sendStatus(422);
     }
 
     const to = stripHtml(req.body.to).result.trim();
@@ -167,6 +167,41 @@ app.delete("/messages/:id", async (req, res) => {
     }
 
     await db.collection('messages').deleteOne({ _id: new ObjectId(id) });
+    res.sendStatus(200);
+});
+
+app.put("/messages/:id", async (req, res) => {
+    const id = req.params.id;
+
+    const validation = messageSchema.validate(req.body);
+    if (validation.error) {
+        return res.sendStatus(422);
+    }
+
+    const to = stripHtml(req.body.to).result.trim();
+    const text = stripHtml(req.body.text).result.trim();
+    const type = stripHtml(req.body.type).result.trim();
+
+    const user = stripHtml(req.headers.user).result.trim();
+    const participants = await db.collection('participants').find().toArray();
+    const repeated = participants.find(item => item.name === user);
+    if (!repeated) {
+        return res.sendStatus(422);
+    }
+
+    const messageId = await db.collection('messages').findOne({ _id: new ObjectId(id)});
+    if (!messageId) {
+        return res.sendStatus(404);
+    }
+    if (messageId.from !== user) {
+        return res.sendStatus(401);
+    }
+
+    await db.collection('messages').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { to, text, type } }
+    );
+        
     res.sendStatus(200);
 });
 
